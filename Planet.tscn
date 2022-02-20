@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://Planet.gd" type="Script" id=1]
+[ext_resource path="res://PlanetMeshFace.gd" type="Script" id=2]
+
+[node name="Planet" type="Spatial"]
+script = ExtResource( 1 )
+
+[node name="Up" type="MeshInstance" parent="."]
+transform = Transform( -0.341928, 0.0730475, -0.934915, -0.205906, -0.963872, 0, -0.901149, 0.192498, 0.354732, 0, 0, 0 )
+script = ExtResource( 2 )
