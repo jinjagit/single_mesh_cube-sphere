@@ -10,7 +10,5 @@ func _input(event):
 		vp.debug_draw = (vp.debug_draw + 1 ) % 4
 		
 func _ready():
-	for child in get_children():
-		var face := child as PlanetMeshFace
-		face.generate_mesh()
+	get_children()[0].generate_mesh()
 

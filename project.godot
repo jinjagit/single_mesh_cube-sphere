@@ -10,12 +10,12 @@ config_version=4
 
 _global_script_classes=[ {
 "base": "MeshInstance",
-"class": "PlanetMeshFace",
+"class": "PlanetMesh",
 "language": "GDScript",
-"path": "res://PlanetMeshFace.gd"
+"path": "res://PlanetMesh.gd"
 } ]
 _global_script_class_icons={
-"PlanetMeshFace": ""
+"PlanetMesh": ""
 }
 
 [application]

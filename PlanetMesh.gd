@@ -1,6 +1,6 @@
 tool
 extends MeshInstance
-class_name PlanetMeshFace
+class_name PlanetMesh
 
 # Use https://catlikecoding.com/unity/tutorials/cube-sphere/
 # to improve mapping cube points to sphere, so as to equalize
@@ -84,7 +84,7 @@ func generate_mesh():
 			var rotatedPoint = Vector3(pointOnUnitCube.y * -1, pointOnUnitCube.x, pointOnUnitCube.z)
 			
 			vertex_array[i] = rotatedPoint
-			#vertex_array[i] = _optimized_unit_sphere_point(pointOnUnitCube)
+			#vertex_array[i] = _optimized_unit_sphere_point(rotatedPoint)
 			
 			if y == resolution - 2 and x > (resolution - 3):
 				vertex_array[i] = rotatedPoint * 0.75
