@@ -24,15 +24,9 @@ func generate_mesh():
 	var index_array := PoolIntArray()
 	
 	var resolution := 10
-	#var num_vertices : int = resolution * (resolution - 1) #+ (resolution * (resolution - 1))
-	var num_vertices : int = resolution * (resolution - 1) * 4
-	#var num_vertices : int = (resolution * (resolution - 1) * 4) + ((resolution - 2) *  (resolution - 2) * 2)
-	
-	var num_indices : int = ((resolution - 1) * (resolution - 1) * 24) # + ((resolution - 1) * (resolution - 2) * 6)
-	#var num_indices : int = (resolution - 1) * (resolution -2) * 12
-	#var num_indices : int = (resolution - 1) * (resolution -1) * 36
-	
-	
+	var num_vertices : int = resolution * (resolution - 1) * 4	
+	var num_indices : int = ((resolution - 1) * (resolution - 1) * 24)
+
 	# up, front, down, back, left, right
 	var faceNormals := [Vector3(0, 1, 0), Vector3(0, 0, -1), Vector3(0, -1, 0), Vector3(0, 0, 1), Vector3(-1, 0, 0), Vector3(1, 0, 0)]
 	
@@ -43,151 +37,60 @@ func generate_mesh():
 	
 	var tri_index : int = 0
 	
-
-	var normal : Vector3 = faceNormals[0]
-	var axisA := Vector3(normal.y, normal.z, normal.x)
-	var axisB : Vector3 = normal.cross(axisA)
-	for y in range(resolution - 1):
-		for x in range(resolution):
-			var i : int = x + y * resolution
-			var percent := Vector2(x, y) / (resolution - 1)
-			var pointOnUnitCube : Vector3 = normal + (percent.x - 0.5) * 2.0 * axisA + (percent.y - 0.5) * 2.0 * axisB
+	for face in range(4):
+		var normal : Vector3 = faceNormals[face]
+		var axisA := Vector3(normal.y, normal.z, normal.x)
+		var axisB : Vector3 = normal.cross(axisA)
+		
+		for y in range(resolution - 1):
+			for x in range(resolution):
+				var i : int = x + y * resolution + (resolution * (resolution - 1) * face)
+				var percent := Vector2(x, y) / (resolution - 1)
+				var pointOnUnitCube : Vector3 = normal + (percent.x - 0.5) * 2.0 * axisA + (percent.y - 0.5) * 2.0 * axisB
+				
+				# Rotations
+				if face == 1:
+					pointOnUnitCube = Vector3(pointOnUnitCube.y * -1, pointOnUnitCube.x, pointOnUnitCube.z)
+				elif face == 2:
+					pointOnUnitCube = Vector3(pointOnUnitCube.x * -1, pointOnUnitCube.y, pointOnUnitCube.z * -1)
+				elif face == 3:
+					pointOnUnitCube = Vector3(pointOnUnitCube.y, pointOnUnitCube.x * -1, pointOnUnitCube.z)
+				
+				vertex_array[i] = pointOnUnitCube
+				#vertex_array[i] = _optimized_unit_sphere_point(rotatedPoint)
+					
+				# Add row of triangles between end of last face and start of this one
+				if face > 0 and y == 0 and x != resolution - 1:
+					index_array[tri_index + 2] = i - resolution
+					index_array[tri_index + 1] = i + 1
+					index_array[tri_index] = i
+					
+					index_array[tri_index + 5] = i - resolution
+					index_array[tri_index + 4] = i - resolution + 1
+					index_array[tri_index + 3] = i + 1
+					tri_index += 6
+				
+				# Set the triangle vertex indices for triangles between new rows of vertices
+				if x != resolution - 1 and y != resolution - 2:
+					index_array[tri_index + 2] = i
+					index_array[tri_index + 1] = i + resolution + 1
+					index_array[tri_index] = i + resolution
+					
+					index_array[tri_index + 5] = i
+					index_array[tri_index + 4] = i + 1
+					index_array[tri_index + 3] = i + resolution + 1
+					tri_index += 6
 			
-			vertex_array[i] = pointOnUnitCube
-			#vertex_array[i] = _optimized_unit_sphere_point(pointOnUnitCube)
-			
-			# Set the triangle vertex indices for triangles between new rows of vertices
-			if x != resolution - 1 and y != resolution - 2:
-				index_array[tri_index + 2] = i
-				index_array[tri_index + 1] = i + resolution + 1
-				index_array[tri_index] = i + resolution
-				
-				index_array[tri_index + 5] = i
-				index_array[tri_index + 4] = i + 1
-				index_array[tri_index + 3] = i + resolution + 1
-				tri_index += 6
-				
-	normal = faceNormals[1]
-	axisA = Vector3(normal.y, normal.z, normal.x)
-	axisB = normal.cross(axisA)
-	for y in range(resolution - 1):
-		for x in range(resolution):
-			var i : int = x + y * resolution + (resolution * (resolution - 1))
-			var percent := Vector2(x, y) / (resolution - 1)
-			var pointOnUnitCube : Vector3 = normal + (percent.x - 0.5) * 2.0 * axisA + (percent.y - 0.5) * 2.0 * axisB
-			
-			# rotate anticlockwise 90 degrees
-			var rotatedPoint = Vector3(pointOnUnitCube.y * -1, pointOnUnitCube.x, pointOnUnitCube.z)
-			
-			vertex_array[i] = rotatedPoint
-			#vertex_array[i] = _optimized_unit_sphere_point(rotatedPoint)
-				
-			# Add row of triangles between end of last face and start of this one
-			if y == 0 and x != resolution - 1:
-				index_array[tri_index + 2] = i - resolution
-				index_array[tri_index + 1] = i + 1
-				index_array[tri_index] = i
-				
-				index_array[tri_index + 5] = i - resolution
-				index_array[tri_index + 4] = i - resolution + 1
-				index_array[tri_index + 3] = i + 1
-				tri_index += 6
-			
-			# Set the triangle vertex indices for triangles between new rows of vertices
-			if x != resolution - 1 and y != resolution - 2:
-				index_array[tri_index + 2] = i
-				index_array[tri_index + 1] = i + resolution + 1
-				index_array[tri_index] = i + resolution
-				
-				index_array[tri_index + 5] = i
-				index_array[tri_index + 4] = i + 1
-				index_array[tri_index + 3] = i + resolution + 1
-				tri_index += 6
-				
-	normal = faceNormals[2]
-	axisA = Vector3(normal.y, normal.z, normal.x)
-	axisB = normal.cross(axisA)
-	for y in range(resolution - 1):
-		for x in range(resolution):
-			var i : int = x + y * resolution + (resolution * (resolution - 1) * 2)
-			var percent := Vector2(x, y) / (resolution - 1)
-			var pointOnUnitCube : Vector3 = normal + (percent.x - 0.5) * 2.0 * axisA + (percent.y - 0.5) * 2.0 * axisB
-			
-			# rotate 180 degrees
-			var rotatedPoint = Vector3(pointOnUnitCube.x * -1, pointOnUnitCube.y, pointOnUnitCube.z * -1)
-			
-			vertex_array[i] = rotatedPoint
-			#vertex_array[i] = _optimized_unit_sphere_point(rotatedPoint)
-				
-			# Add row of triangles between end of last face and start of this one
-			if y == 0 and x != resolution - 1:
-				index_array[tri_index + 2] = i - resolution
-				index_array[tri_index + 1] = i + 1
-				index_array[tri_index] = i
-				
-				index_array[tri_index + 5] = i - resolution
-				index_array[tri_index + 4] = i - resolution + 1
-				index_array[tri_index + 3] = i + 1
-				tri_index += 6
-			
-			# Set the triangle vertex indices for triangles between new rows of vertices
-			if x != resolution - 1 and y != resolution - 2:
-				index_array[tri_index + 2] = i
-				index_array[tri_index + 1] = i + resolution + 1
-				index_array[tri_index] = i + resolution
-				
-				index_array[tri_index + 5] = i
-				index_array[tri_index + 4] = i + 1
-				index_array[tri_index + 3] = i + resolution + 1
-				tri_index += 6
-				
-	normal = faceNormals[3]
-	axisA = Vector3(normal.y, normal.z, normal.x)
-	axisB = normal.cross(axisA)
-	for y in range(resolution - 1):
-		for x in range(resolution):
-			var i : int = x + y * resolution + (resolution * (resolution - 1) * 3)
-			var percent := Vector2(x, y) / (resolution - 1)
-			var pointOnUnitCube : Vector3 = normal + (percent.x - 0.5) * 2.0 * axisA + (percent.y - 0.5) * 2.0 * axisB
-			
-			# rotate anticlockwise 90 degrees
-			var rotatedPoint = Vector3(pointOnUnitCube.y, pointOnUnitCube.x * -1, pointOnUnitCube.z)
-			
-			vertex_array[i] = rotatedPoint
-			#vertex_array[i] = _optimized_unit_sphere_point(rotatedPoint)
-				
-			# Add row of triangles between end of last face and start of this one
-			if y == 0 and x != resolution - 1:
-				index_array[tri_index + 2] = i - resolution
-				index_array[tri_index + 1] = i + 1
-				index_array[tri_index] = i
-				
-				index_array[tri_index + 5] = i - resolution
-				index_array[tri_index + 4] = i - resolution + 1
-				index_array[tri_index + 3] = i + 1
-				tri_index += 6
-			
-			# Set the triangle vertex indices for triangles between new rows of vertices
-			if x != resolution - 1 and y != resolution - 2:
-				index_array[tri_index + 2] = i
-				index_array[tri_index + 1] = i + resolution + 1
-				index_array[tri_index] = i + resolution
-				
-				index_array[tri_index + 5] = i
-				index_array[tri_index + 4] = i + 1
-				index_array[tri_index + 3] = i + resolution + 1
-				tri_index += 6
-				
-			# Set the triangle vertex indices for final row of triangles between 3rd & 4th faces
-			if y == resolution - 2 and x != resolution - 1:
-				index_array[tri_index + 2] = i
-				index_array[tri_index + 1] = x + 1
-				index_array[tri_index] = x
-				
-				index_array[tri_index + 5] = i
-				index_array[tri_index + 4] = i + 1
-				index_array[tri_index + 3] = x + 1
-				tri_index += 6							
+				# Set the triangle vertex indices for final row of triangles between 3rd & 4th faces
+				if face == 3 and y == resolution - 2 and x != resolution - 1:
+					index_array[tri_index + 2] = i
+					index_array[tri_index + 1] = x + 1
+					index_array[tri_index] = x
+					
+					index_array[tri_index + 5] = i
+					index_array[tri_index + 4] = i + 1
+					index_array[tri_index + 3] = x + 1
+					tri_index += 6							
 				
 	# Calculate normal for each triangle
 	for a in range(0, index_array.size(), 3):
