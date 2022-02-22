@@ -23,12 +23,12 @@ func generate_mesh():
 	var normal_array := PoolVector3Array()
 	var index_array := PoolIntArray()
 	
-	var resolution := 10
-	var num_vertices : int = resolution * (resolution - 1) * 4	
-	var num_indices : int = ((resolution - 1) * (resolution - 1) * 24)
+	var resolution := 6
+	var num_vertices : int = (resolution * (resolution - 1) * 4) + ((resolution - 2) * (resolution - 2))
+	var num_indices : int = ((resolution - 1) * (resolution - 1) * 24) + ((resolution - 3) * (resolution - 3) * 6) + 24 + ((resolution -3) * 6)
 
 	# up, front, down, back, left, right
-	var faceNormals := [Vector3(0, 1, 0), Vector3(0, 0, -1), Vector3(0, -1, 0), Vector3(0, 0, 1), Vector3(-1, 0, 0), Vector3(1, 0, 0)]
+	var faceNormals := [Vector3(0, 1, 0), Vector3(0, 0, -1), Vector3(0, -1, 0), Vector3(0, 0, 1), Vector3(1, 0, 0), Vector3(-1, 0, 0)]
 	
 	vertex_array.resize(num_vertices)
 	uv_array.resize(num_vertices)
@@ -57,7 +57,10 @@ func generate_mesh():
 					pointOnUnitCube = Vector3(pointOnUnitCube.y, pointOnUnitCube.x * -1, pointOnUnitCube.z)
 				
 				vertex_array[i] = pointOnUnitCube
-				#vertex_array[i] = _optimized_unit_sphere_point(rotatedPoint)
+				#vertex_array[i] = _optimized_unit_sphere_point(pointOnUnitCube)
+				
+				#if face == 0 and y == resolution - 2 and x > resolution - 3:
+					#vertex_array[i] = pointOnUnitCube * 0.75
 					
 				# Add row of triangles between end of last face and start of this one
 				if face > 0 and y == 0 and x != resolution - 1:
@@ -90,7 +93,101 @@ func generate_mesh():
 					index_array[tri_index + 5] = i
 					index_array[tri_index + 4] = i + 1
 					index_array[tri_index + 3] = x + 1
-					tri_index += 6							
+					tri_index += 6
+	
+	var normal : Vector3 = faceNormals[5]
+	var axisA := Vector3(normal.y, normal.z, normal.x)
+	var axisB : Vector3 = normal.cross(axisA)				
+	for y in range(1, resolution - 1, 1):
+			for x in range(1, resolution - 1, 1):
+				var i : int = (x - 1) + ((y - 1) * (resolution - 2)) + (resolution * (resolution - 1) * 4) # magic number 4 == 5th face
+				var percent := Vector2(x, y) / (resolution - 1)
+				var pointOnUnitCube : Vector3 = normal + (percent.x - 0.5) * 2.0 * axisA + (percent.y - 0.5) * 2.0 * axisB
+				
+				# Rotations
+
+				vertex_array[i] = pointOnUnitCube
+				#vertex_array[i] = _optimized_unit_sphere_point(pointOnUnitCube)
+				
+				# Set triangles for top left quad
+				if x == 1 and y == 1:
+					index_array[tri_index + 2] = 0
+					index_array[tri_index + 1] = i
+					index_array[tri_index] = (4 * resolution * (resolution -1)) - resolution
+					
+					index_array[tri_index + 5] = 0
+					index_array[tri_index + 4] = resolution
+					index_array[tri_index + 3] = i
+					tri_index += 6
+					
+				#Set triangles for top row between corner quads
+				if x < resolution - 2 and y == 1:
+					index_array[tri_index + 2] = x * resolution
+					index_array[tri_index + 1] = i + 1
+					index_array[tri_index] = i
+					
+					index_array[tri_index + 5] = x * resolution
+					index_array[tri_index + 4] = (x + 1) * resolution
+					index_array[tri_index + 3] = i + 1
+					tri_index += 6
+				
+				# Set triangles for top right quad
+				if x == 1 and y == resolution - 2:
+					index_array[tri_index + 2] = (3 * resolution * (resolution -1)) - resolution
+					index_array[tri_index + 1] = (3 * resolution * (resolution -1)) + resolution
+					index_array[tri_index] = i
+					
+					index_array[tri_index + 5] = (3 * resolution * (resolution -1)) - resolution
+					index_array[tri_index + 4] = 3 * resolution * (resolution -1)
+					index_array[tri_index + 3] = (3 * resolution * (resolution -1)) + resolution
+					tri_index += 6
+				
+				# Set the triangle vertex indices for triangles to left of new vertices (as seen form inside cube)
+				
+				
+				
+				# Set the triangle vertex indices for triangles between top face edge and new rows of vertices
+				
+				
+				# Set the triangle vertex indices for triangles between new rows of vertices
+				if x < resolution - 2 and y < resolution - 2:
+					index_array[tri_index + 2] = i
+					index_array[tri_index + 1] = i + resolution + 1 - 2
+					index_array[tri_index] = i + resolution - 2
+					
+					index_array[tri_index + 5] = i
+					index_array[tri_index + 4] = i + 1
+					index_array[tri_index + 3] = i + resolution + 1 - 2
+					tri_index += 6
+				
+				# Set triangles for bottom left quad
+				if x == resolution - 2 and y == 1:
+					index_array[tri_index + 2] = (resolution * (resolution -1)) - resolution
+					index_array[tri_index + 1] = (resolution * (resolution -1)) + resolution
+					index_array[tri_index] = i
+				
+					index_array[tri_index + 5] = (resolution * (resolution -1)) - resolution
+					index_array[tri_index + 4] = resolution * (resolution -1)
+					index_array[tri_index + 3] = (resolution * (resolution -1)) + resolution
+					tri_index += 6
+				
+					
+				# Set the triangle vertex indices for triangles to right of new vertices (as seen form inside cube)
+				
+			
+				# Set the triangle vertex indices for triangles between bottom face edge and new rows of vertices
+				
+				# Set triangles for bottom right quad
+				if x == resolution - 2 and y == resolution - 2:
+					index_array[tri_index + 2] = i
+					index_array[tri_index + 1] = (2 * resolution * (resolution -1)) 
+					index_array[tri_index] = (2 * resolution * (resolution -1)) + resolution
+				
+					index_array[tri_index + 5] = i
+					index_array[tri_index + 4] = 2 * resolution * (resolution -1) - resolution
+					index_array[tri_index + 3] = (2 * resolution * (resolution -1)) 
+					tri_index += 6
+				
 				
 	# Calculate normal for each triangle
 	for a in range(0, index_array.size(), 3):
@@ -124,10 +221,12 @@ func _update_mesh(arrays : Array):
 	var _mesh := ArrayMesh.new()
 	_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	self.mesh = _mesh
+	
+	#rotate_object_local(Vector3(0, 0, 1), 3.3)
 		
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
-	rotate_object_local(Vector3(1, 0, 0), delta/5)
+	rotate_object_local(Vector3(1, 0, 0), delta/10)
 
 
 # Notes on faces (r^2 == resolution * resolution):
@@ -136,7 +235,7 @@ func _process(delta):
 # Edge A1: (0, resolution - 1, 1) = (min, max, step)
 # Edge A2: (0, resolution * (resolution - 1), resolution)
 # Edge A3: (resolution - 1, r^2 - 1, resolution)
-# Edge A4: 
+# Edge A4: (resolution * (resolution - 1), r^2 - 1, resolution)
 # 
 # Back z-
 # Edge B1 = A4
