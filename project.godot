@@ -8,16 +8,6 @@
 
 config_version=4
 
-_global_script_classes=[ {
-"base": "MeshInstance",
-"class": "PlanetMesh",
-"language": "GDScript",
-"path": "res://PlanetMesh.gd"
-} ]
-_global_script_class_icons={
-"PlanetMesh": ""
-}
-
 [application]
 
 config/name="single_mesh_cube-sphere"
