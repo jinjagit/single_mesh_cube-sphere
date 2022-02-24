@@ -25,10 +25,9 @@ func generate_mesh():
 	var normal_array := PoolVector3Array()
 	var index_array := PoolIntArray()
 
-	var resolution := 256
-	var num_vertices : int = (resolution * (resolution - 1) * 4) + ((resolution - 2) * (resolution - 2))
-	var num_indices : int = (resolution - 1) * (resolution - 1) * 30 # + ((resolution - 3) * (resolution - 3) * 6) + 24 + ((resolution -3) * 18) + 12
-	# var num_indices : int = ((resolution - 1) * (resolution - 1) * 36) # magic number 36 = 6 indices per quad * 6 faces * (number of quads per face)
+	var resolution := 16
+	var num_vertices : int = (resolution * (resolution - 1) * 4) + ((resolution - 2) * (resolution - 2) * 2)
+	var num_indices : int = (resolution - 1) * (resolution - 1) * 36
 
 	# top, front, bottom, back, left, right
 	var faceNormals := [Vector3(0, 1, 0), Vector3(0, 0, -1), Vector3(0, -1, 0), Vector3(0, 0, 1), Vector3(1, 0, 0), Vector3(-1, 0, 0)]
@@ -63,10 +62,10 @@ func generate_mesh():
 				if spherise == true:
 					vertex_array[i] = _optimized_unit_sphere_point(pointOnUnitCube)
 				else:
-					vertex_array[i] = pointOnUnitCube * 0.75
+					vertex_array[i] = pointOnUnitCube * 0.65
 
-				#if face == 0 and y == resolution - 2 and x > resolution - 3:
-					#vertex_array[i] = pointOnUnitCube * 0.75
+				#if face == 0 and y == resolution - 2 and x == resolution - 3:
+					#vertex_array[i] = pointOnUnitCube * 0.55
 
 				# Add row of triangles between end of last face and start of this one
 				if face > 0 and y == 0 and x != resolution - 1:
@@ -106,116 +105,232 @@ func generate_mesh():
 	var axisA := Vector3(normal.y, normal.z, normal.x)
 	var axisB : Vector3 = normal.cross(axisA)
 	for y in range(1, resolution - 1, 1):
-			for x in range(1, resolution - 1, 1):
-				var i : int = (x - 1) + ((y - 1) * (resolution - 2)) + (resolution * (resolution - 1) * 4) # magic number 4 == 5th face
-				var percent := Vector2(x, y) / (resolution - 1)
-				var pointOnUnitCube : Vector3 = normal + (percent.x - 0.5) * 2.0 * axisA + (percent.y - 0.5) * 2.0 * axisB
+		for x in range(1, resolution - 1, 1):
+			var i : int = (x - 1) + ((y - 1) * (resolution - 2)) + (resolution * (resolution - 1) * 4) # magic number 4 == 5th face
+			var percent := Vector2(x, y) / (resolution - 1)
+			var pointOnUnitCube : Vector3 = normal + (percent.x - 0.5) * 2.0 * axisA + (percent.y - 0.5) * 2.0 * axisB
 
-				# Rotations (no-op for fifth face)
+			# Rotations (no-op for fifth face)
 
-				if spherise == true:
-					vertex_array[i] = _optimized_unit_sphere_point(pointOnUnitCube)
-				else:
-					vertex_array[i] = pointOnUnitCube * 0.75
+			if spherise == true:
+				vertex_array[i] = _optimized_unit_sphere_point(pointOnUnitCube)
+			else:
+				vertex_array[i] = pointOnUnitCube * 0.65
 
-				# Set triangles for top left quad (as seen from inside cube)
-				if x == 1 and y == 1:
-					index_array[tri_index + 2] = 0
-					index_array[tri_index + 1] = i
-					index_array[tri_index] = resolution * (resolution -1) * 4 - resolution
-	
-					index_array[tri_index + 5] = 0
-					index_array[tri_index + 4] = resolution
-					index_array[tri_index + 3] = i
-					tri_index += 6
-	
-				# Set triangles for top row between corner quads (as seen from inside cube)
-				if x < resolution - 2 and y == 1:
-					index_array[tri_index + 2] = x * resolution
-					index_array[tri_index + 1] = i + 1
-					index_array[tri_index] = i
+			# Set triangles for top left quad (as seen from inside cube)
+			if x == 1 and y == 1:
+				index_array[tri_index + 2] = 0
+				index_array[tri_index + 1] = i
+				index_array[tri_index] = resolution * (resolution -1) * 4 - resolution
 
-					index_array[tri_index + 5] = x * resolution
-					index_array[tri_index + 4] = (x + 1) * resolution
-					index_array[tri_index + 3] = i + 1
-					tri_index += 6
+				index_array[tri_index + 5] = 0
+				index_array[tri_index + 4] = resolution
+				index_array[tri_index + 3] = i
+				tri_index += 6
 
-				# Set triangles for top right quad (as seen from inside cube)
-				if x == resolution - 2 and y == 1:
-					index_array[tri_index + 2] = resolution * (resolution -1) - resolution
-					index_array[tri_index + 1] = resolution * (resolution -1) + resolution
-					index_array[tri_index] = i
+			# Set triangles for top row between corner quads (as seen from inside cube)
+			if x < resolution - 2 and y == 1:
+				index_array[tri_index + 2] = x * resolution
+				index_array[tri_index + 1] = i + 1
+				index_array[tri_index] = i
 
-					index_array[tri_index + 5] = resolution * (resolution -1) - resolution
-					index_array[tri_index + 4] = resolution * (resolution -1)
-					index_array[tri_index + 3] = resolution * (resolution -1) + resolution
-					tri_index += 6
+				index_array[tri_index + 5] = x * resolution
+				index_array[tri_index + 4] = (x + 1) * resolution
+				index_array[tri_index + 3] = i + 1
+				tri_index += 6
 
-				# Set triangles for left column between corner quads (as seen from inside cube)
-				if x == 1 and y > 1 and y < resolution - 1:
-					index_array[tri_index + 2] = resolution * (resolution -1) * 4 - ((y - 1) * resolution)
-					index_array[tri_index + 1] = i
-					index_array[tri_index] = resolution * (resolution -1) * 4 - (y * resolution)
+			# Set triangles for top right quad (as seen from inside cube)
+			if x == resolution - 2 and y == 1:
+				index_array[tri_index + 2] = resolution * (resolution -1) - resolution
+				index_array[tri_index + 1] = resolution * (resolution -1) + resolution
+				index_array[tri_index] = i
 
-					index_array[tri_index + 5] = resolution * (resolution -1) * 4 - ((y - 1) * resolution)
-					index_array[tri_index + 4] = i - (resolution - 2)
-					index_array[tri_index + 3] = i
-					tri_index += 6
+				index_array[tri_index + 5] = resolution * (resolution -1) - resolution
+				index_array[tri_index + 4] = resolution * (resolution -1)
+				index_array[tri_index + 3] = resolution * (resolution -1) + resolution
+				tri_index += 6
 
-				# Set the triangle vertex indices for triangles between new rows of vertices
-				if x < resolution - 2 and y < resolution - 2:
-					index_array[tri_index + 2] = i
-					index_array[tri_index + 1] = i + resolution -1
-					index_array[tri_index] = i + resolution - 2
+			# Set triangles for left column between corner quads (as seen from inside cube)
+			if x == 1 and y > 1 and y < resolution - 1:
+				index_array[tri_index + 2] = resolution * (resolution -1) * 4 - ((y - 1) * resolution)
+				index_array[tri_index + 1] = i
+				index_array[tri_index] = resolution * (resolution -1) * 4 - (y * resolution)
 
-					index_array[tri_index + 5] = i
-					index_array[tri_index + 4] = i + 1
-					index_array[tri_index + 3] = i + resolution - 1
-					tri_index += 6
+				index_array[tri_index + 5] = resolution * (resolution -1) * 4 - ((y - 1) * resolution)
+				index_array[tri_index + 4] = i - (resolution - 2)
+				index_array[tri_index + 3] = i
+				tri_index += 6
 
-				# Set triangles for right column between corner quads (as seen from inside cube)
-				if x == resolution - 2 and y > 1 and y < resolution - 1:
-					index_array[tri_index + 2] = i - (resolution - 2)
-					index_array[tri_index + 1] = resolution * (resolution -1) + (y * resolution)
-					index_array[tri_index] = i
+			# Set the triangle vertex indices for triangles between new rows of vertices
+			if x < resolution - 2 and y < resolution - 2:
+				index_array[tri_index + 2] = i
+				index_array[tri_index + 1] = i + resolution -1
+				index_array[tri_index] = i + resolution - 2
 
-					index_array[tri_index + 5] = i - (resolution - 2)
-					index_array[tri_index + 4] = resolution * (resolution -1) + ((y - 1) * resolution)
-					index_array[tri_index + 3] = resolution * (resolution -1) + (y * resolution)
-					tri_index += 6
+				index_array[tri_index + 5] = i
+				index_array[tri_index + 4] = i + 1
+				index_array[tri_index + 3] = i + resolution - 1
+				tri_index += 6
 
-				# Set triangles for bottom left quad (as seen from inside cube)
-				if x == 1 and y == resolution - 2:
-					index_array[tri_index + 2] = resolution * (resolution -1) * 3 - resolution
-					index_array[tri_index + 1] = resolution * (resolution -1) * 3 + resolution
-					index_array[tri_index] = i
+			# Set triangles for right column between corner quads (as seen from inside cube)
+			if x == resolution - 2 and y > 1 and y < resolution - 1:
+				index_array[tri_index + 2] = i - (resolution - 2)
+				index_array[tri_index + 1] = resolution * (resolution -1) + (y * resolution)
+				index_array[tri_index] = i
 
-					index_array[tri_index + 5] = resolution * (resolution -1) * 3 - resolution
-					index_array[tri_index + 4] = resolution * (resolution -1) * 3
-					index_array[tri_index + 3] = resolution * (resolution -1) * 3 + resolution
-					tri_index += 6
+				index_array[tri_index + 5] = i - (resolution - 2)
+				index_array[tri_index + 4] = resolution * (resolution -1) + ((y - 1) * resolution)
+				index_array[tri_index + 3] = resolution * (resolution -1) + (y * resolution)
+				tri_index += 6
 
-				# Set triangles for bottom row between corner quads (as seen from inside cube)
-				if x > 1 and x < resolution - 1 and y == resolution - 2:
-					index_array[tri_index + 2] = i - 1
-					index_array[tri_index + 1] = resolution * (resolution -1) * 3 - (x * resolution)
-					index_array[tri_index] = resolution * (resolution -1) * 3 - ((x - 1 ) * resolution)
+			# Set triangles for bottom left quad (as seen from inside cube)
+			if x == 1 and y == resolution - 2:
+				index_array[tri_index + 2] = resolution * (resolution -1) * 3 - resolution
+				index_array[tri_index + 1] = resolution * (resolution -1) * 3 + resolution
+				index_array[tri_index] = i
 
-					index_array[tri_index + 5] = i - 1
-					index_array[tri_index + 4] = i
-					index_array[tri_index + 3] = resolution * (resolution -1) * 3 - (x * resolution)
-					tri_index += 6
+				index_array[tri_index + 5] = resolution * (resolution -1) * 3 - resolution
+				index_array[tri_index + 4] = resolution * (resolution -1) * 3
+				index_array[tri_index + 3] = resolution * (resolution -1) * 3 + resolution
+				tri_index += 6
 
-				# Set triangles for bottom right quad (as seen from inside cube)
-				if x == resolution - 2 and y == resolution - 2:
-					index_array[tri_index + 2] = i
-					index_array[tri_index + 1] = resolution * (resolution -1) * 2 
-					index_array[tri_index] = resolution * (resolution -1) * 2 + resolution
+			# Set triangles for bottom row between corner quads (as seen from inside cube)
+			if x > 1 and x < resolution - 1 and y == resolution - 2:
+				index_array[tri_index + 2] = i - 1
+				index_array[tri_index + 1] = resolution * (resolution -1) * 3 - (x * resolution)
+				index_array[tri_index] = resolution * (resolution -1) * 3 - ((x - 1 ) * resolution)
 
-					index_array[tri_index + 5] = i
-					index_array[tri_index + 4] = resolution * (resolution -1) * 2 - resolution
-					index_array[tri_index + 3] = resolution * (resolution -1) * 2
-					tri_index += 6
+				index_array[tri_index + 5] = i - 1
+				index_array[tri_index + 4] = i
+				index_array[tri_index + 3] = resolution * (resolution -1) * 3 - (x * resolution)
+				tri_index += 6
+
+			# Set triangles for bottom right quad (as seen from inside cube)
+			if x == resolution - 2 and y == resolution - 2:
+				index_array[tri_index + 2] = i
+				index_array[tri_index + 1] = resolution * (resolution -1) * 2 
+				index_array[tri_index] = resolution * (resolution -1) * 2 + resolution
+
+				index_array[tri_index + 5] = i
+				index_array[tri_index + 4] = resolution * (resolution -1) * 2 - resolution
+				index_array[tri_index + 3] = resolution * (resolution -1) * 2
+				tri_index += 6
+				
+	normal = faceNormals[4]
+	axisA = Vector3(normal.y, normal.z, normal.x)
+	axisB = normal.cross(axisA)
+	for y in range(1, resolution - 1, 1):
+		for x in range(1, resolution - 1, 1):
+			var i : int = (x - 1) + ((y - 1) * (resolution - 2)) + (resolution * (resolution - 1) * 4) + ((resolution - 2) * (resolution - 2)) # magic number 4 == 5th face
+			var percent := Vector2(x, y) / (resolution - 1)
+			var pointOnUnitCube : Vector3 = normal + (percent.x - 0.5) * 2.0 * axisA + (percent.y - 0.5) * 2.0 * axisB
+
+			# Rotations (no-op for fifth face)
+
+			if spherise == true:
+				vertex_array[i] = _optimized_unit_sphere_point(pointOnUnitCube)
+			else:
+				vertex_array[i] = pointOnUnitCube * 0.65
+
+			# Set triangles for top left quad (as seen from inside cube)
+			if x == 1 and y == 1:
+				index_array[tri_index + 2] = resolution * (resolution -1) + resolution - 1
+				index_array[tri_index + 1] = i
+				index_array[tri_index] = resolution * (resolution -1) + (2 * resolution) - 1
+				
+				index_array[tri_index + 5] = resolution * (resolution -1) + resolution - 1
+				index_array[tri_index + 4] = resolution * (resolution -1) - 1
+				index_array[tri_index + 3] = i
+				tri_index += 6
+
+			# Set triangles for top row between corner quads (as seen from inside cube)
+			if x < resolution - 2 and y == 1:
+				index_array[tri_index + 2] = resolution * (resolution -1) - ((x - 1) * resolution) - 1
+				index_array[tri_index + 1] = i + 1
+				index_array[tri_index] = i
+
+				index_array[tri_index + 5] = resolution * (resolution -1) - ((x - 1) * resolution) - 1
+				index_array[tri_index + 4] = resolution * (resolution -1) - (x * resolution) - 1
+				index_array[tri_index + 3] = i + 1
+				tri_index += 6
+
+
+			# Set triangles for top right quad (as seen from inside cube)
+			if x == resolution - 2 and y == 1:
+				index_array[tri_index + 2] = 2 * resolution - 1
+				index_array[tri_index + 1] = resolution * (resolution -1) * 4 - 1
+				index_array[tri_index] = i
+				
+				index_array[tri_index + 5] = 2 * resolution - 1
+				index_array[tri_index + 4] = resolution - 1
+				index_array[tri_index + 3] = resolution * (resolution -1) * 4 - 1
+				tri_index += 6
+
+			# Set triangles for left column between corner quads (as seen from inside cube)
+			if x == 1 and y > 1 and y < resolution - 1:
+				index_array[tri_index + 2] = resolution * (resolution -1) * 1 + (y * resolution) - 1
+				index_array[tri_index + 1] = i
+				index_array[tri_index] = resolution * (resolution -1) * 1 + ((y + 1) * resolution) - 1
+
+				index_array[tri_index + 5] = resolution * (resolution -1) * 1 + (y * resolution) - 1
+				index_array[tri_index + 4] = i - (resolution - 2)
+				index_array[tri_index + 3] = i
+				tri_index += 6
+
+			# Set the triangle vertex indices for triangles between new rows of vertices
+			if x < resolution - 2 and y < resolution - 2:
+				index_array[tri_index + 2] = i
+				index_array[tri_index + 1] = i + resolution -1
+				index_array[tri_index] = i + resolution - 2
+
+				index_array[tri_index + 5] = i
+				index_array[tri_index + 4] = i + 1
+				index_array[tri_index + 3] = i + resolution - 1
+				tri_index += 6
+
+			# Set triangles for right column between corner quads (as seen from inside cube)
+			if x == resolution - 2 and y > 1 and y < resolution -1:
+				index_array[tri_index + 2] = i - (resolution - 2)
+				index_array[tri_index + 1] = resolution * (resolution -1) * 4 - ((y - 1) * resolution) - 1
+				index_array[tri_index] = i
+
+				index_array[tri_index + 5] = i - (resolution - 2)
+				index_array[tri_index + 4] = resolution * (resolution -1) * 4 - ((y - 2) * resolution) - 1
+				index_array[tri_index + 3] = resolution * (resolution -1) * 4 - ((y - 1) * resolution) - 1
+				tri_index += 6
+				
+			# Set triangles for bottom left quad (as seen from inside cube)
+			if x == 1 and y == resolution - 2:
+				index_array[tri_index + 2] = resolution * (resolution -1) * 2 - 1
+				index_array[tri_index + 1] = resolution * (resolution -1) * 2 + (2 * resolution) - 1
+				index_array[tri_index] = resolution * (resolution -1) * 2 + resolution - 1
+
+				index_array[tri_index + 5] = resolution * (resolution -1) * 2 - 1
+				index_array[tri_index + 4] = i
+				index_array[tri_index + 3] = resolution * (resolution -1) * 2 + (2 * resolution) - 1
+				tri_index += 6
+
+			# Set triangles for bottom row between corner quads (as seen from inside cube)
+			if x < resolution - 2 and y == resolution - 2:
+				index_array[tri_index + 2] = i
+				index_array[tri_index + 1] = resolution * (resolution -1) * 2 + ((x + 2) * resolution) - 1
+				index_array[tri_index] = resolution * (resolution -1) * 2 + ((x + 1) * resolution) - 1
+
+				index_array[tri_index + 5] = i
+				index_array[tri_index + 4] = i + 1
+				index_array[tri_index + 3] = resolution * (resolution -1) * 2 + ((x + 2) * resolution) - 1
+				tri_index += 6
+				
+			# Set triangles for bottom right quad (as seen from inside cube)
+			if x == resolution - 2 and y == resolution - 2:
+				index_array[tri_index + 2] = i
+				index_array[tri_index + 1] = resolution * (resolution -1) * 3 + resolution - 1
+				index_array[tri_index] = resolution * (resolution -1) * 3 - 1
+
+				index_array[tri_index + 5] = i
+				index_array[tri_index + 4] = resolution * (resolution -1) * 3 + (2 * resolution) - 1
+				index_array[tri_index + 3] = resolution * (resolution -1) * 3 + resolution - 1
+				tri_index += 6
 
 	# Calculate normal for each triangle
 	for a in range(0, index_array.size(), 3):
@@ -250,7 +365,7 @@ func _update_mesh(arrays : Array):
 	_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	self.mesh = _mesh
 
-	#rotate_object_local(Vector3(0, 0, 1), 3.3)
+	rotate_object_local(Vector3(0, 0, 1), 3.3)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
